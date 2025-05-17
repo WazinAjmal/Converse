@@ -1,0 +1,351 @@
+Converse API Documentation
+
+## Authorization
+
+All endpoints except **Login** and **Register** require authentication using JWT tokens. Clients must include the token in the `Authorization` header:
+
+```
+Authorization: Bearer <token>
+```
+
+If an invalid or expired token is provided, the request will be rejected with a `401 Unauthorized` response.
+
+---
+
+## Authentication
+
+### Login
+**Endpoint:** `POST /api/user/login`
+**Authentication:**  Not required
+**Request Body:**
+```json
+{
+  "phoneNumber": "string",
+  "password": "string"
+}
+```
+**Response:**
+```json
+{
+  "token": "string"
+}
+```
+
+### Register
+**Endpoint:** `POST /api/user/register`
+**Authentication:**  Not required
+**Request Body:**
+```json
+{
+  "phoneNumber": "string",
+  "name": "string",
+  "password": "string"
+}
+```
+**Response:**
+```json
+{
+  "message": "User registered successfully.",
+  "token": "string"
+}
+```
+
+---
+
+## User Management
+
+### Get User
+**Endpoint:** `GET /api/user/{phoneNumber}`
+**Authentication:**  Required
+**Response:**
+```json
+{
+  "phoneNumber": "string",
+  "name": "string",
+  "profilePicUrl": "string"
+}
+```
+
+### Remove User
+**Endpoint:** `POST /api/user/removeUser`
+**Authentication:**  Required
+**Request Body:**
+```json
+"phoneNumber": "string"
+```
+**Response:**
+```json
+{
+  "message": "User removed successfully."
+}
+```
+
+### Update User Details
+**Endpoint:** `PUT /api/user/updateUser`
+**Authentication:**  Required
+**Request Body:**
+```json
+{
+  "phoneNumber": "string",
+  "name": "string",
+  "newPhone": "string"
+}
+```
+**Response:**
+```json
+"User updated successfully."
+```
+
+### Update Password
+**Endpoint:** `PUT /api/user/updatePassword`
+**Authentication:**  Required
+**Request Body:**
+```json
+{
+  "phoneNumber": "string",
+  "currentPassword": "string",
+  "newPassword": "string"
+}
+```
+**Response:**
+```json
+"User updated successfully."
+```
+
+### Update Profile Picture
+**Endpoint:** `PUT /api/user/updateProfilePic`
+**Authentication:**  Required
+**Request Body:**
+```json
+{
+  "phoneNumber": "string",
+  "newProfilePicUrl": "string"
+}
+```
+**Response:**
+```json
+"User updated successfully."
+```
+
+---
+
+## Group Management
+
+### Create Group
+**Endpoint:** `POST /api/group/create`
+**Authentication:**  Required
+**Request Body:**
+```json
+{
+  "groupName": "string",
+  "privateHosting": bool
+}
+```
+**Response:**
+```json
+{
+  "groupId": "string",
+  "groupName": "string",
+  "groupCreator": "string"
+}
+```
+
+### Get Group
+**Endpoint:** `GET /api/group/{groupId}`
+**Authentication:**  Required
+**Response:**
+```json
+{
+  "groupId": "string",
+  "groupName": "string",
+  "members": ["string"],
+  "admins": ["string"]
+}
+```
+
+### Delete Group
+**Endpoint:** `DELETE /api/group/{groupId}`
+**Authentication:**  Required
+**Response:**
+```json
+{
+  "message": "Group removed."
+}
+```
+
+### Add Member
+**Endpoint:** `POST /api/group/members`
+**Authentication:**  Required
+**Request Body:**
+```json
+{
+  "groupId": "string",
+  "phoneNumber": "string"
+}
+```
+**Response:**
+```json
+{
+  "message": "Member added to group."
+}
+```
+
+### Remove Member
+**Endpoint:** `DELETE /api/group/members`
+**Authentication:**  Required
+**Request Body:**
+```json
+{
+  "groupId": "string",
+  "phoneNumber": "string"
+}
+```
+**Response:**
+```json
+{
+  "message": "Member removed from group."
+}
+```
+
+### Get Group Members
+**Endpoint:** `GET /api/group/{groupId}/members`
+**Authentication:**  Required
+**Response:**
+```json
+{
+  "members": ["string"]
+}
+```
+
+### Get Group Admins
+**Endpoint:** `GET /api/group/{groupId}/admins`
+**Authentication:**  Required
+**Response:**
+```json
+{
+  "admins": ["string"]
+}
+```
+
+---
+
+## Messaging
+
+### Get Message History
+**Endpoint:** `POST /api/message/history`
+**Authentication:**  Required
+**Request Body:**
+```json
+{
+  "sender": "string",
+  "receiver": "string",
+  "isGroup": true/false
+}
+```
+**Response:**
+```json
+[
+  {
+    "senderPhone": "string",
+    "receiverPhone": "string",
+    "content": "string",
+    "sentAt": "datetime",
+    "delivered": true/false,
+    "read": true/false
+  }
+]
+```
+
+---
+
+## SignalR Methods
+
+### `ReceiveMessage`
+**Authentication:**  Required
+**Description:** Called when a user receives a new message.
+**Parameters:**
+```json
+{
+  "sender": "string",
+  "messageContent": "string"
+}
+```
+
+### `ReceiveGroupMessage`
+**Authentication:**  Required
+**Description:** Called when a user receives a new group message.
+**Parameters:**
+```json
+{
+  "sender": "string",
+  "messageContent": "string"
+}
+```
+
+### `JoinGroup`
+**Authentication:**  Required
+**Description:** Joins a group in real-time communication.
+**Parameters:**
+```json
+{
+  "groupId": "string"
+}
+```
+
+### `LeaveGroup`
+**Authentication:**  Required
+**Description:** Leaves a group in real-time communication.
+**Parameters:**
+```json
+{
+  "groupId": "string"
+}
+```
+
+### Models
+
+    public class GroupData
+    {
+        [BsonId]
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string? GroupId { get; set; } // MongoDB will use this as the unique identifier
+        public string GroupName { get; set; }
+        public string GroupCreator { get; set; }
+        public List<string> Members { get; set; } // List of user phone numbers
+        public List<string> Admins { get; set; }
+        public bool IsPrivateHosted = false;
+
+        public GroupData(string groupName, string creator, bool privateHosting)
+        {
+            GroupName = groupName;
+            GroupCreator = creator;
+            Members = new List<string> { creator };
+            Admins = new List<string> { creator };
+            IsPrivateHosted = privateHosting;
+        }
+    }
+
+    public class UserData
+    {
+        [BsonId]
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string? Id { get; set; } // MongoDB identifier
+        public string PhoneNumber { get; set; } // User's phone number (used as ID)
+        public string Name { get; set; } // Display name
+        public string Password { get; set; }
+        public string ProfilePicUrl { get; set; } = null;
+    }
+
+    public class MessageData
+    {
+        [BsonId]
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string? Id { get; set; } // MongoDB identifier
+        public string SenderPhone { get; set; } // Sender's phone number
+        public string? ReceiverPhone { get; set; } // Receiver's phone number (if it's a direct message)
+        public string? GroupID { get; set; } // Group ID (if it's a group message)
+        public string Content { get; set; } // Message text
+        public DateTime SentAt { get; set; } = DateTime.UtcNow; // Timestamp
+        public bool Delivered { get; set; } = false; // Message delivery status
+        public bool Read { get; set; } = false; // Message read status
+    }
